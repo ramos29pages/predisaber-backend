@@ -1,0 +1,21 @@
+# Entornos virtuales
+.venv/
+venv/
+env/
+
+# Caché de Python
+__pycache__/
+*.py[cod]
+
+# Archivos de pip y setuptools
+*.egg-info/
+dist/
+build/
+
+# Archivos de entorno y variables sensibles
+.env
+*.env
+
+# IDEs y editores
+.vscode/
+.idea/
