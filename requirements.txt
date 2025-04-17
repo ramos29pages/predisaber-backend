@@ -2,5 +2,7 @@ fastapi[estandard]
 uvicorn
 motor
 pydantic
+pydantic[email]
+python-multipart
 passlib[bcrypt]
 python-dotenv
