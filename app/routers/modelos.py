@@ -1,7 +1,7 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException, status, Form
 import os
-from app import crud
-from app.models import ModeloPrediccionOut
+from app import controller
+from app.schemas.modelos import ModeloPrediccionOut
 import shutil
 
 router = APIRouter()
@@ -37,9 +37,9 @@ async def registrar_modelo(
         "tipo_prueba": tipo_prueba,
         "archivo": file_location
     }
-    nuevo_modelo = await crud.create_modelo(modelo_data)
+    nuevo_modelo = await controller.create_modelo(modelo_data)
     return nuevo_modelo
 
 @router.get("/", response_model=list[ModeloPrediccionOut])
 async def listar_modelos(skip: int = 0, limit: int = 100):
-    return await crud.get_modelos(skip, limit)
+    return await controller.get_modelos(skip, limit)

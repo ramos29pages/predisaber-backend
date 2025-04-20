@@ -4,7 +4,7 @@ import datetime
 
 # Esquemas para Usuario
 class UsuarioBase(BaseModel):
-    nombre: str
+    name: str
     email: EmailStr
 
 class UsuarioCreate(UsuarioBase):
