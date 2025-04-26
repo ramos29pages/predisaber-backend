@@ -9,6 +9,17 @@ router = APIRouter()
 async def read_usuarios(skip: int = 0, limit: int = 100):
     return await crud_usuarios.get_usuarios(skip, limit)
 
+
+@router.get("/{id}", response_model=UsuarioOut)
+async def read_usuario(id: str):
+    usuario = await crud_usuarios.get_usuario_by_id(id)
+    if not usuario:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Usuario con ese ID no encontrado."
+        )
+    return usuario
+
 @router.get("/{email}", response_model=UsuarioOut)
 async def read_usuario(email: str):
     usuario = await crud_usuarios.get_usuario_by_email(email)
@@ -18,6 +29,8 @@ async def read_usuario(email: str):
             detail="Usuario con ese email no encontrado."
         )
     return usuario
+
+
 
 @router.post("", response_model=UsuarioOut)
 async def create_usuario(usuario: UsuarioCreate):

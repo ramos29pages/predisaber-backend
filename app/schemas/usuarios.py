@@ -4,8 +4,8 @@ class UsuarioBase(BaseModel):
     name: str
     email: EmailStr
     role : str
-    semester : str
-    identificacion: str
+    semester : int
+    identificacion: int
     tipo_prueba: str
     
 class UsuarioCreate(UsuarioBase):

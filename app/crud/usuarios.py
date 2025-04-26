@@ -21,6 +21,13 @@ async def get_usuario_by_email(email: str):
         return usuario_helper(usuario)
     return None
 
+
+async def get_usuario_by_id(usuario_id: str) -> dict:
+        usuario = await usuarios_collection.find_one({"_id": ObjectId(usuario_id)})
+        if usuario:
+            return usuario_helper(usuario)
+        return None
+
 async def create_usuario(usuario: UsuarioCreate) -> dict:
     usuario_dict = {
         "name": usuario.name,
