@@ -5,6 +5,7 @@ class QuestionBase(BaseModel):
     id: str
     question: str
     options: List[str] = Field(default_factory=list)
+    
 
 class QuestionCreate(QuestionBase):
     pass
@@ -17,6 +18,8 @@ class FormBase(BaseModel):
     description: Optional[str] = None
     logo: Optional[str] = None
     questions: List[QuestionBase]
+    model_name: str
+    model_version: str
 
 class FormCreate(FormBase):
     pass

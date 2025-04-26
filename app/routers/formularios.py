@@ -1,11 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException
 from typing import List
+from app.crud.modelos import predict
 
 # Asumiendo que FormCreate y FormOut están definidos en 'app.schemas.formularios'
 from app.schemas.formularios import FormCreate, FormOut
 
 # Asumiendo que FormController está definido en 'app.controllers.formularios'
-from app.crud.formController import FormController
+from app.crud.formularios import FormController
 
 router = APIRouter()
 
@@ -37,3 +38,11 @@ async def delete_formulario(formulario_id: str):
     if not deleted_formulario:
         raise HTTPException(status_code=404, detail="Formulario no encontrado")
     return deleted_formulario
+
+@router.post("/predict")
+async def predecir(form_id: str, answers: dict):
+    form = await FormController.get_formulario(form_id)
+    if not form:
+        raise HTTPException(404, "Formulario no existe")
+    pred = await predict(form_id, answers)
+    return {"prediction": pred}

@@ -3,12 +3,13 @@ from typing import Optional
 
 class ModeloPrediccionBase(BaseModel):
     nombre: str
+    precision: int
     descripcion: Optional[str] = None
     version: str
     tipo_prueba: str
 
 class ModeloPrediccionCreate(ModeloPrediccionBase):
-    pass
+    archivo: str  # ruta donde se guardará el pickle
 
 class ModeloPrediccionOut(ModeloPrediccionBase):
     id: str

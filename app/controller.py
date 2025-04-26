@@ -2,6 +2,8 @@ from app.schemas.usuarios import UsuarioCreate, UsuarioBase
 from app.schemas.modelos import ModeloPrediccionCreate 
 from app.schemas.pruebas import PruebaCreate
 from app.database import usuarios_collection, modelos_collection, pruebas_collection
+from app.services.modelRegistry import load_model
+from app.crud.formularios import FormController
 from passlib.context import CryptContext
 import datetime
 from bson import ObjectId
@@ -120,3 +122,17 @@ async def get_pruebas(skip: int = 0, limit: int = 100) -> list:
     async for prueba in cursor:
         pruebas.append(prueba_helper(prueba))
     return pruebas
+
+
+
+
+async def predict(form_id: str, answers: dict) -> float:
+    form = await FormController.get_formulario(form_id)
+    if not form:
+        raise ValueError("Formulario no encontrado")
+    # Mapear respuestas al vector X según orden de preguntas :contentReference[oaicite:3]{index=3}
+    X = [answers[q["id"]] for q in form["questions"]]
+    model_path = form["model_name"] + "_" + form["model_version"] + ".pkl"
+    model = load_model(model_path)
+    pred = model.predict([X])[0]
+    return float(pred)

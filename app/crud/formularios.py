@@ -11,6 +11,8 @@ def formulario_helper(formulario) -> dict:
         "description": formulario.get("description"),
         "logo": formulario.get("logo"),
         "questions": formulario["questions"],
+        "model_name": formulario["model_name"],
+        "model_version": formulario["model_version"],
     }
 
 class FormController:
