@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.routers import users, modelos, pruebas
+from app.routers import users, modelos, pruebas, formularios
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="API de Gestión de Modelos y Pruebas con MongoDB Atlas")
@@ -17,9 +17,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(users.router, prefix="/users", tags=["Usuarios"])
+@app.get("/")
+async def root():
+    return {"message": "Bienvenido a la API de Gestión de Modelos y Pruebas con MongoDB"}
+
+app.include_router(users.router, prefix="/usuarios", tags=["Usuarios"])
 app.include_router(modelos.router, prefix="/modelos", tags=["Modelos de Predicción"])
 app.include_router(pruebas.router, prefix="/pruebas", tags=["Pruebas"])
+app.include_router(formularios.router, prefix="/formularios", tags=["Formularios"])
 
 if __name__ == "__main__":
     import uvicorn

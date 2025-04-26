@@ -10,3 +10,4 @@ database = client["predisaber"]
 usuarios_collection = database.get_collection("usuarios")
 modelos_collection = database.get_collection("modelos_prediccion")
 pruebas_collection = database.get_collection("pruebas")
+formularios_collection = database.get_collection("formularios")
