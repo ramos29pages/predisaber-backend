@@ -1,12 +1,15 @@
-from pydantic import BaseModel
-from typing import Optional
+from pydantic import BaseModel, Field
+from typing import Optional, List
+
 
 class ModeloPrediccionBase(BaseModel):
     nombre: str
-    precision: int
+    creado_por: str
+    precision: float
+    date: str
     descripcion: Optional[str] = None
-    version: str
-    tipo_prueba: str
+    version: float
+    variables: List[str] = Field(default_factory=list)
 
 class ModeloPrediccionCreate(ModeloPrediccionBase):
     archivo: str  # ruta donde se guardará el pickle
