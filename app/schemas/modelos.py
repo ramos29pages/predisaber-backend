@@ -14,6 +14,7 @@ class ModeloPrediccionBase(BaseModel):
 class ModeloPrediccionCreate(ModeloPrediccionBase):
     archivo: str  # ruta donde se guardará el pickle
 
+
 class ModeloPrediccionOut(ModeloPrediccionBase):
     id: str
     archivo: str

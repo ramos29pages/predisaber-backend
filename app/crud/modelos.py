@@ -3,9 +3,12 @@ from app.schemas.modelos import ModeloPrediccionCreate
 from app.schemas.modelos import ModeloPrediccionCreate
 from app.database import modelos_collection
 from bson import ObjectId
+import os, shutil
 from fastapi import HTTPException, status
 
 from app.services.modelRegistry import load_model
+
+UPLOAD_DIR = "uploads"
 
 def modelo_helper(m) -> dict:
     return {
@@ -21,20 +24,34 @@ def modelo_helper(m) -> dict:
     }
 
 async def create_modelo(data: ModeloPrediccionCreate) -> dict:
-    # Verificar duplicados por nombre+versión
+    # 1) Verificar duplicado en BD
     exists = await modelos_collection.find_one({
-        "nombre": data.nombre,
-        "version": data.version
+        "nombre": data.nombre, "version": data.version
     })
     if exists:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"Ya existe modelo '{data.nombre}' versión '{data.version}'"
-        )  # :contentReference[oaicite:0]{index=0}
-    doc = data.dict()
-    res = await modelos_collection.insert_one(doc)
-    new = await modelos_collection.find_one({"_id": res.inserted_id})
-    return modelo_helper(new)
+        )                                            # 409 Conflict :contentReference[oaicite:2]{index=2}
+
+    # 2) Preparar destino
+    dest = os.path.join(UPLOAD_DIR, os.path.basename(data.archivo))
+    
+    # # 3) Evitar overwrite si ya existe
+    # if os.path.exists(dest):
+    #     raise HTTPException(
+    #         status_code=status.HTTP_409_CONFLICT,
+    #         detail="Ya existe un archivo LOCAL con ese nombre en el servidor"
+    #     )                                          # Evitar overwrite :contentReference[oaicite:3]{index=3}
+
+    # 4) Mover el joblib temporal al destino final
+    shutil.move(data.archivo, dest)               # mueve fichero :contentReference[oaicite:4]{index=4}
+    data.archivo = dest
+
+    # 5) Insertar en BD
+    result = await modelos_collection.insert_one(data.dict())
+    return modelo_helper({**data.dict(), "_id": result.inserted_id})
+
 
 async def get_modelos(skip: int = 0, limit: int = 100) -> list[dict]:
     out = []
@@ -65,8 +82,18 @@ async def list_versions_per_name() -> dict:
         result[n] = await modelos_collection.distinct("version", {"nombre": n})
     return result
 
-async def update_modelo(modelo_id: str, data: dict) -> dict:
-    # Evitar colisión al cambiar nombre/version
+async def update_modelo(modelo_id: str, data: ModeloPrediccionCreate) -> dict:
+    # 1) Validar ID válido
+    if not ObjectId.is_valid(modelo_id):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "ID inválido")
+
+    # 2) Buscar original
+    orig = await modelos_collection.find_one({"_id": ObjectId(modelo_id)})
+    if not orig:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Modelo no encontrado")
+
+
+        # Evitar colisión al cambiar nombre/version
     if "nombre" in data or "version" in data:
         other = await modelos_collection.find_one({
             "nombre": data.get("nombre"),
@@ -76,14 +103,39 @@ async def update_modelo(modelo_id: str, data: dict) -> dict:
         if other:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail="Otro modelo ya usa ese nombre y versión"
+                detail="Otro modelo ya usa ese nombre y versión en la DB"
             )
+            
+    # 3) Si envían nuevo archivo, procesarlo
+    new_file = data.get("archivo")
+    if new_file:
+        dest = os.path.join(UPLOAD_DIR, os.path.basename(new_file))
+        # Verificar colisión
+        if os.path.exists(dest):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Ya existe un archivo con ese nombre en el servidor"
+            )
+        # Borrar antiguo
+        if os.path.isfile(orig["archivo"]):
+            os.remove(orig["archivo"])
+        # Mover el nuevo
+        shutil.move(new_file, dest)
+        # Actualiza la ruta en el dict
+        data["archivo"] = dest
+    else:
+        # conserva la ruta anterior si no se envió nuevo archivo
+        data["archivo"] = orig["archivo"]
+
+    # 4) Actualizar campos en BD
     await modelos_collection.update_one(
         {"_id": ObjectId(modelo_id)},
         {"$set": data}
-    )  # :contentReference[oaicite:3]{index=3}
+    )                                              # update_one :contentReference[oaicite:7]{index=7}
+
     updated = await modelos_collection.find_one({"_id": ObjectId(modelo_id)})
     return modelo_helper(updated)
+
 
 async def delete_modelo(modelo_id: str) -> bool:
     res = await modelos_collection.delete_one({"_id": ObjectId(modelo_id)})
