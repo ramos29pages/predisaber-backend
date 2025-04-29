@@ -7,6 +7,9 @@ env/
 __pycache__/
 *.py[cod]
 
+*.p
+*.joblib
+
 # Archivos de pip y setuptools
 *.egg-info/
 dist/

@@ -20,7 +20,7 @@ async def read_usuario(id: str):
         )
     return usuario
 
-@router.get("/{email}", response_model=UsuarioOut)
+@router.get("/email/{email}", response_model=UsuarioOut)
 async def read_usuario(email: str):
     usuario = await crud_usuarios.get_usuario_by_email(email)
     if not usuario:

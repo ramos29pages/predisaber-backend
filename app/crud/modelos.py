@@ -111,11 +111,11 @@ async def update_modelo(modelo_id: str, data: ModeloPrediccionCreate) -> dict:
     if new_file:
         dest = os.path.join(UPLOAD_DIR, os.path.basename(new_file))
         # Verificar colisión
-        if os.path.exists(dest):
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="Ya existe un archivo con ese nombre en el servidor"
-            )
+        # if os.path.exists(dest):
+        #     raise HTTPException(
+        #         status_code=status.HTTP_409_CONFLICT,
+        #         detail="Ya existe un archivo con ese nombre en el servidor"
+        #     )
         # Borrar antiguo
         if os.path.isfile(orig["archivo"]):
             os.remove(orig["archivo"])
