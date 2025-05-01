@@ -1,8 +1,6 @@
-
 from fastapi import APIRouter, HTTPException, status
-from app.schemas.asignaciones import AsignacionCreate, AsignacionOut
+from app.schemas.asignaciones import AsignacionCreate, AsignacionOut, AsignacionUpdate
 from app.crud import asignaciones as crud_asignaciones
-
 
 router = APIRouter()
 
@@ -24,7 +22,17 @@ async def get_asignacion(asignacion_id: str):
         )
     return asignacion
 
-    
+@router.put("/{asignacion_id}", response_model=AsignacionOut)
+async def update_asignacion_route(asignacion_id: str, asignacion_update: AsignacionUpdate):
+    asignacion = await crud_asignaciones.get_asignacion_by_id(asignacion_id)
+    if not asignacion:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Asignación no encontrada"
+        )
+    updated_asignacion = await crud_asignaciones.update_asignacion(asignacion_id, asignacion_update)
+    return updated_asignacion
+
 @router.delete("/{asignacion_id}", response_model=AsignacionOut)
 async def delete_asignacion_route(asignacion_id: str):
     asignacion = await crud_asignaciones.get_asignacion_by_id(asignacion_id)

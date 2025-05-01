@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+import uvicorn
 from app.routers import users, modelos, pruebas, formularios, asignaciones
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -28,5 +29,4 @@ app.include_router(formularios.router, prefix="/formularios", tags=["Formularios
 app.include_router(asignaciones.router, prefix="/asignaciones", tags=["Asignaciones"])
 
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("app.main:app.main", host="0.0.0.0", port=8000, reload=True, log_level="info")
