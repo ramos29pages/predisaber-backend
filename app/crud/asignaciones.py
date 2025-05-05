@@ -57,8 +57,7 @@ async def delete_asignacion(id: str) -> Optional[AsignacionOut]:
         return AsignacionOut(**asignacion, id=str(asignacion["_id"]))
     return None
 
-async def get_asignacion_by_userid(user_id: str) -> Optional[AsignacionOut]:
-    asignacion = await asignaciones_collection.find_one({"user_id": user_id})
-    if asignacion:
-        return AsignacionOut(**asignacion, id=str(asignacion["_id"]))
-    return None
+async def get_asignacion_by_userid(user_id: str) -> list[AsignacionOut]:
+    cursor = asignaciones_collection.find({"user_id": user_id})
+    asignaciones = await cursor.to_list(length=None)  # Obtener todos los documentos coincidentes
+    return [AsignacionOut(**a, id=str(a["_id"])) for a in asignaciones]

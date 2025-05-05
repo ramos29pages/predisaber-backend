@@ -22,15 +22,10 @@ async def get_asignacion(asignacion_id: str):
         )
     return asignacion
 
-@router.get("/userid/{user_id}", response_model=AsignacionOut)
+@router.get("/userid/{user_id}", response_model=list[AsignacionOut])
 async def get_asignacion(user_id: str):
-    asignacion = await crud_asignaciones.get_asignacion_by_userid(user_id)
-    if not asignacion:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Asignación no encontrada"
-        )
-    return asignacion
+    asignaciones = await crud_asignaciones.get_asignacion_by_userid(user_id)
+    return asignaciones if asignaciones else []
 
 @router.put("/{asignacion_id}", response_model=AsignacionOut)
 async def update_asignacion_route(asignacion_id: str, asignacion_update: AsignacionUpdate):
