@@ -10,3 +10,5 @@ aiofiles
 joblib
 xgboost
 scikit-learn
+pandas
+numpy
