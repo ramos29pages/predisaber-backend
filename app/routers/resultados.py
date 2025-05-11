@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, status
 from typing import List
+from app.crud.generations.generate import generate_prediction
 from app.schemas.resultados import ResultadoOut, ResultadoCreate
 from app.schemas.prediccion import PrediccionDatosEntrada, PrediccionOut
 from app.crud import resultados as crud
@@ -23,26 +24,14 @@ async def list_resultados(skip: int = 0, limit: int = 100):
     """
     return await crud.get_all_resultados(skip, limit)
 
-@router.post("/predecir")
-async def predecir(path: str, datos: PrediccionDatosEntrada):
-    # 1) cargar modelo
+@router.post("/predecir/{file_id}")
+async def predecir(file_id: str, datos: PrediccionDatosEntrada):
     try:
-        modelo = joblib.load(path)
+        prediccion = await generate_prediction(file_id, datos)
     except FileNotFoundError:
-        raise HTTPException(404, f"Modelo no encontrado: {path}")
-    # 2) payload → DataFrame genérico
-    payload = datos.dict(by_alias=True)
-    df = pd.DataFrame([payload])
-    # 3) alinear columnas
-    expected = list(modelo.feature_names_in_)
-    df = df.reindex(columns=expected, fill_value=0)
-    # 4) predict
-    try:
-        y = modelo.predict(df)
-        return {"prediccion": int(y[0]), "modelo_usado": path}
-    except Exception as e:
-        raise HTTPException(500, f"Error en predict: {e}")
+        raise HTTPException(404, file_id)
 
+    return prediccion
     
 
 @router.get("/{resultado_id}", response_model=ResultadoOut)
