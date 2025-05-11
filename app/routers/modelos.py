@@ -2,7 +2,7 @@ import uuid
 from fastapi import APIRouter, UploadFile, File, HTTPException, status, Form
 import os
 import joblib
-from typing import Annotated
+from typing import Annotated, List
 from app import controller
 from app.schemas.modelos import ModeloPrediccionOut, ModeloPrediccionCreate
 from app.crud.modelos import create_modelo, get_modelos
@@ -14,6 +14,7 @@ from app.crud.modelos import (
     create_modelo, get_modelos, get_modelo_by_id, get_modelos_by_name,
     list_model_names, list_versions_per_name, update_modelo, delete_modelo
 )
+from app.crud.models.create import create_model
 
 router = APIRouter()
 
@@ -24,12 +25,6 @@ if not os.path.exists(UPLOAD_DIR):
 
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-def unique_filename(filename: str) -> str:
-    """Añade un UUID al nombre para evitar colisiones :contentReference[oaicite:2]{index=2}."""
-    uid = uuid.uuid4().hex
-    base, ext = os.path.splitext(filename)
-    return f"{base}_{uid}.joblib"
-
 @router.post("/", response_model=ModeloPrediccionOut, status_code=status.HTTP_201_CREATED)
 async def registrar_modelo(
     nombre: str = Form(...),
@@ -39,33 +34,45 @@ async def registrar_modelo(
     descripcion: str | None = Form(None),
     version: str = Form(...),
     archivo: UploadFile = File(...),
-    variables: list[str] = Form(...)
+    variables: List[str] = Form(...)
 ):
-    # Leer una sola vez
-    contenido = await archivo.read()
     if not archivo.filename.endswith((".p", ".pickle")):
         raise HTTPException(400, "Extensión no permitida")
 
-    tmp_path = os.path.join(UPLOAD_DIR, unique_filename(archivo.filename))
-    # Escribir el contenido leído
-    async with aiofiles.open(tmp_path, "wb") as out:
-        await out.write(contenido)
+    unique_file = unique_filename(archivo.filename)
+    tmp_path = os.path.join(UPLOAD_DIR, unique_file)
 
-    # Ahora tmp_path contiene datos; convertir a joblib
-    model = joblib.load(tmp_path)    # OK: fichero no vacío :contentReference[oaicite:3]{index=3}
-    joblib.dump(model, tmp_path)      # Serializa seguro como .joblib :contentReference[oaicite:4]{index=4}
-
-
-    modelo_in = ModeloPrediccionCreate(
-        nombre=nombre, creado_por=creado_por, precision=precision,
-        date=date, descripcion=descripcion, version=version,
-        variables=variables, archivo=tmp_path
-    )
     try:
-        return await create_modelo(modelo_in)
-    except ValueError as e:
-        raise HTTPException(status.HTTP_409_CONFLICT, str(e))
+        contenido = await archivo.read()
+        async with aiofiles.open(tmp_path, "wb") as out:
+            await out.write(contenido)
 
+        # Cargar y volver a guardar con joblib (como en tu código)
+        try:
+            model = joblib.load(tmp_path)
+            joblib.dump(model, tmp_path)
+        except Exception as e:
+            os.remove(tmp_path)
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Error al procesar el archivo del modelo: {str(e)}")
+
+        modelo_in = ModeloPrediccionCreate(
+            nombre=nombre, creado_por=creado_por, precision=precision,
+            date=date, descripcion=descripcion, version=version,
+            variables=variables, archivo=tmp_path  # Pasar la ruta temporal
+        )
+        return await create_model(modelo_in)
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        # Asegúrate de limpiar el archivo temporal en caso de otros errores
+        if os.path.exists(tmp_path):
+            os.remove(tmp_path)
+        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, f"Error inesperado al registrar el modelo: {str(e)}")
+
+# Función de utilidad para generar nombres de archivo únicos
+def unique_filename(filename: str) -> str:
+    name, ext = os.path.splitext(filename)
+    return f"{name}_{uuid.uuid4()}{ext}"
 
 # editar modelo
 @router.put("/{modelo_id}", response_model=ModeloPrediccionOut, status_code=status.HTTP_202_ACCEPTED)

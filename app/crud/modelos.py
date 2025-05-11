@@ -16,12 +16,13 @@ def modelo_helper(m) -> dict:
         "nombre": m["nombre"],
         "descripcion": m.get("descripcion"),
         "version": m["version"],
-        "archivo": m["archivo"],
         "creado_por": m["creado_por"],
         "precision": m["precision"],
         "date": m["date"],
         "variables": m["variables"],
+        "file_id": m.get("file_id"),
     }
+
 
 async def create_modelo(data: ModeloPrediccionCreate) -> dict:
     # 1) Verificar duplicado en BD

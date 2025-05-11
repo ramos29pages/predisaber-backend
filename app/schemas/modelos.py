@@ -12,12 +12,12 @@ class ModeloPrediccionBase(BaseModel):
     variables: List[str] = Field(default_factory=list)
 
 class ModeloPrediccionCreate(ModeloPrediccionBase):
-    archivo: str  # ruta donde se guardará el pickle
+    archivo: str  # Ahora esperamos la ruta temporal del archivo
 
 
 class ModeloPrediccionOut(ModeloPrediccionBase):
     id: str
-    archivo: str
+    file_id: Optional[str] = None  # Solo necesitamos la referencia a GridFS
 
     class Config:
         orm_mode = True
