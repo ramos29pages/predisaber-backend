@@ -83,61 +83,6 @@ async def list_versions_per_name() -> dict:
         result[n] = await modelos_collection.distinct("version", {"nombre": n})
     return result
 
-async def update_modelo(modelo_id: str, data: ModeloPrediccionCreate) -> dict:
-    # 1) Validar ID válido
-    if not ObjectId.is_valid(modelo_id):
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "ID inválido")
-
-    # 2) Buscar original
-    orig = await modelos_collection.find_one({"_id": ObjectId(modelo_id)})
-    if not orig:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Modelo no encontrado")
-
-
-        # Evitar colisión al cambiar nombre/version
-    if "nombre" in data or "version" in data:
-        other = await modelos_collection.find_one({
-            "nombre": data.get("nombre"),
-            "version": data.get("version"),
-            "_id": {"$ne": ObjectId(modelo_id)}
-        })
-        if other:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="Otro modelo ya usa ese nombre y versión en la DB"
-            )
-            
-    # 3) Si envían nuevo archivo, procesarlo
-    new_file = data.get("archivo")
-    if new_file:
-        dest = os.path.join(UPLOAD_DIR, os.path.basename(new_file))
-        # Verificar colisión
-        # if os.path.exists(dest):
-        #     raise HTTPException(
-        #         status_code=status.HTTP_409_CONFLICT,
-        #         detail="Ya existe un archivo con ese nombre en el servidor"
-        #     )
-        # Borrar antiguo
-        if os.path.isfile(orig["archivo"]):
-            os.remove(orig["archivo"])
-        # Mover el nuevo
-        shutil.move(new_file, dest)
-        # Actualiza la ruta en el dict
-        data["archivo"] = dest
-    else:
-        # conserva la ruta anterior si no se envió nuevo archivo
-        data["archivo"] = orig["archivo"]
-
-    # 4) Actualizar campos en BD
-    await modelos_collection.update_one(
-        {"_id": ObjectId(modelo_id)},
-        {"$set": data}
-    )                                              # update_one :contentReference[oaicite:7]{index=7}
-
-    updated = await modelos_collection.find_one({"_id": ObjectId(modelo_id)})
-    return modelo_helper(updated)
-
-
 async def delete_modelo(modelo_id: str) -> bool:
     res = await modelos_collection.delete_one({"_id": ObjectId(modelo_id)})
     return res.deleted_count == 1  # :contentReference[oaicite:4]{index=4}
