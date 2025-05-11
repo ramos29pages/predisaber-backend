@@ -1,5 +1,5 @@
 from app.database import usuarios_collection
-from app.schemas.usuarios import UsuarioCreate, UsuarioBase
+from app.schemas.usuarios import UsuarioCreate, UsuarioBase, UsuarioUpdate
 from bson import ObjectId
 
 def usuario_helper(usuario) -> dict:
@@ -64,3 +64,18 @@ async def delete_usuario(usuario_id: str) -> dict:
         await usuarios_collection.delete_one({"_id": ObjectId(usuario_id)})
         return usuario_helper(usuario)
     return None
+
+
+
+async def update_usuario_picture(usuario_id: str, usuario_data: UsuarioUpdate) -> dict:
+    # Sólo toma los campos enviados y no nulos
+    update_dict = usuario_data.dict(exclude_unset=True, exclude_none=True)
+    if not update_dict:
+        return await get_usuario_by_id(usuario_id)
+
+    await usuarios_collection.update_one(
+        {"_id": ObjectId(usuario_id)},
+        {"$set": update_dict}
+    )
+    usuario = await usuarios_collection.find_one({"_id": ObjectId(usuario_id)})
+    return usuario_helper(usuario)

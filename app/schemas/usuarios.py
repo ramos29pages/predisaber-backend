@@ -1,3 +1,4 @@
+from typing import Optional
 from pydantic import BaseModel, EmailStr
 
 class UsuarioBase(BaseModel):
@@ -10,7 +11,15 @@ class UsuarioBase(BaseModel):
     
 class UsuarioCreate(UsuarioBase):
     picture: str
-    
+
+class UsuarioUpdate(BaseModel):
+    name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    role: Optional[str] = None
+    semester: Optional[int] = None
+    identificacion: Optional[int] = None
+    tipo_prueba: Optional[str] = None
+    picture: Optional[str] = None
 
 class UsuarioOut(UsuarioBase):
     id: str
