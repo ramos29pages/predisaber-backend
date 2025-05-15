@@ -2,6 +2,7 @@ from bson import ObjectId
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, EmailStr
 import app.crud.usuarios as crud_usuarios
+import app.crud.asignaciones as crud_asignaciones
 from app.schemas.usuarios import UsuarioCreate, UsuarioBase, UsuarioOut, UsuarioUpdate
 from fastapi.responses import JSONResponse
 
@@ -57,6 +58,8 @@ async def delete_usuario(usuario_id: str):
     usuario_eliminado = await crud_usuarios.delete_usuario(usuario_id)
     if not usuario_eliminado:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuario no encontrado")
+    
+    # await crud_asignaciones.delete_asignacion_by_userid(usuario_id)
     return usuario_eliminado
 
 

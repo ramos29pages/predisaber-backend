@@ -61,3 +61,14 @@ async def get_asignacion_by_userid(user_id: str) -> list[AsignacionOut]:
     cursor = asignaciones_collection.find({"user_id": user_id})
     asignaciones = await cursor.to_list(length=None)  # Obtener todos los documentos coincidentes
     return [AsignacionOut(**a, id=str(a["_id"])) for a in asignaciones]
+
+async def delete_asignacion_by_userid(user_id: str) -> AsignacionOut | None:
+    # Ejecuta la operación atómica de búsqueda y borrado
+    asignacion = await asignaciones_collection.find_one_and_delete(
+        {"user_id": user_id}
+    )
+    # Si no existe, devolvemos None o lanzamos excepción
+    if not asignacion:
+        return None
+    # Construimos el schema con el dict resultante
+    return AsignacionOut(**asignacion, id=str(asignacion["_id"]))

@@ -1,5 +1,6 @@
 from app.database import usuarios_collection
-from app.schemas.usuarios import UsuarioCreate, UsuarioBase, UsuarioUpdate
+from app.crud.asignaciones import delete_asignacion_by_userid
+from app.schemas.usuarios import UsuarioCreate, UsuarioBase, UsuarioOut, UsuarioUpdate
 from bson import ObjectId
 
 def usuario_helper(usuario) -> dict:
@@ -58,12 +59,22 @@ async def update_usuario(usuario_id: str, usuario_data: UsuarioBase) -> dict:
     usuario = await usuarios_collection.find_one({"_id": ObjectId(usuario_id)})
     return usuario_helper(usuario)
 
-async def delete_usuario(usuario_id: str) -> dict:
+async def delete_usuario(usuario_id: str) -> UsuarioOut | None:
+    # 1) Borro la asignación asociada (si existe)
+    await delete_asignacion_by_userid(usuario_id)
+    
+    # 2) Busco el usuario para devolver sus datos
     usuario = await usuarios_collection.find_one({"_id": ObjectId(usuario_id)})
-    if usuario:
-        await usuarios_collection.delete_one({"_id": ObjectId(usuario_id)})
-        return usuario_helper(usuario)
-    return None
+    if not usuario:
+        return None
+    
+    # 3) Lo convierto a schema antes de borrarlo
+    usuario_out = UsuarioOut(**usuario, id=str(usuario["_id"]))
+    
+    # 4) Borro el usuario
+    await usuarios_collection.delete_one({"_id": ObjectId(usuario_id)})
+    
+    return usuario_out
 
 
 
