@@ -62,16 +62,27 @@ async def get_asignacion_by_userid(user_id: str) -> list[AsignacionOut]:
     asignaciones = await cursor.to_list(length=None)  # Obtener todos los documentos coincidentes
     return [AsignacionOut(**a, id=str(a["_id"])) for a in asignaciones]
 
-async def delete_asignacion_by_userid(user_id: str) -> AsignacionOut | None:
+async def delete_asignacion_by_userid(user_id: str) -> list[AsignacionOut]:
+     # 1) Buscamos todas las asignaciones con ese user_id
+    cursor = asignaciones_collection.find({"user_id": user_id})
+    # 2) Recolectamos los diccionarios resultantes
+    asignaciones = []
+    
+    async for doc in cursor:
+        asignaciones.append(doc)
     # Ejecuta la operación atómica de búsqueda y borrado
-    asignacion = await asignaciones_collection.delete_many(
-        {"user_id": user_id}
-    )
-    # Si no existe, devolvemos None o lanzamos excepción
-    if not asignacion:
-        return None
-    # Construimos el schema con el dict resultante
-    return AsignacionOut(**asignacion, id=str(asignacion["_id"]))
+
+    if not asignaciones:
+        return []
+    # 4) Convertimos cada dict en un schema AsignacionOut
+    resultados: list[AsignacionOut] = [
+        AsignacionOut(**a, id=str(a["_id"])) for a in asignaciones
+    ]
+     # 5) Borramos todas las asignaciones de una sola vez
+    await asignaciones_collection.delete_many({"user_id": user_id})
+    # 6) Devolvemos la lista de AsignacionOut de lo eliminado
+    return resultados
+
 
 async def delete_asignacion_by_formid(form_id: str) -> list[AsignacionOut]:
     # 1) Buscamos todas las asignaciones con ese form_id
