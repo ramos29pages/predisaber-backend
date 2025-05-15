@@ -2,6 +2,7 @@
 from app.database import formularios_collection
 from app.schemas.formularios import FormCreate, FormBase
 from bson import ObjectId
+from app.crud.asignaciones import delete_asignacion_by_formid
 
 # Función helper para formatear documentos de formulario
 def formulario_helper(formulario) -> dict:
@@ -51,8 +52,24 @@ class FormController:
 
     @staticmethod
     async def delete_formulario(formulario_id: str) -> dict:
-        formulario = await formularios_collection.find_one({"_id": ObjectId(formulario_id)})
-        if formulario:
-            await formularios_collection.delete_one({"_id": ObjectId(formulario_id)})
-            return formulario_helper(formulario)
-        return None
+         # 1) Borrar asignaciones
+        await delete_asignacion_by_formid(formulario_id)
+
+        # 2) Recuperar el formulario
+        doc = await formularios_collection.find_one({"_id": ObjectId(formulario_id)})
+        if not doc:
+            return None
+
+        # 3) Preparar datos para el helper
+        datos = doc.copy()
+        # objeto_id = datos.pop("_id")
+        # datos["id"] = str(objeto_id)
+
+        # 4) Construir el dict con el helper
+        form_dict = formulario_helper(datos)
+
+        # 5) Borrar el formulario
+        await formularios_collection.delete_one({"_id": ObjectId(formulario_id)})
+
+        # 6) Validar/transformar a FormOut si lo necesitas
+        return form_dict
